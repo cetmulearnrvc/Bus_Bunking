@@ -4,13 +4,42 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Live Bus Tracker</title>
-    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <h1>Live Bus Tracker</h1>
-    <div id="map"></div>
+    <h2>Live Bus Locations</h2>
+    <table border="1">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Location</th>
+                <th>Load</th>
+            </tr>
+        </thead>
+        <tbody id="bus-data"></tbody>
+    </table>
 
-    <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&callback=initMap" async defer></script>
-    <script src="script.js"></script>
+    <script>
+        function fetchBusData() {
+            fetch("http://localhost:1000/buses")
+                .then(response => response.json())
+                .then(data => {
+                    const tableBody = document.getElementById("bus-data");
+                    tableBody.innerHTML = ""; // Clear old data
+
+                    data.forEach(bus => {
+                        const row = document.createElement("tr");
+                        row.innerHTML = `<td>${bus.id}</td><td>${bus.location}</td><td>${bus.load}</td>`;
+                        tableBody.appendChild(row);
+                    });
+                })
+                .catch(error => console.error("Error fetching bus data:", error));
+        }
+
+        // Fetch data every 3 seconds
+        setInterval(fetchBusData, 3000);
+
+        // Initial fetch on page load
+        fetchBusData();
+    </script>
 </body>
 </html>
