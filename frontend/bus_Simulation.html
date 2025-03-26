@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>City Bus Route Map</title>
+    <title>City Bus Route Simulator</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -98,170 +98,145 @@
             background-color: #cccccc;
             cursor: not-allowed;
         }
-        
-        .bus-info {
-            text-align: center;
-            margin: 20px;
-            font-size: 18px;
-        }
     </style>
 </head>
 <body>
     <h1>City Bus Route Map</h1>
     
-    <div class="bus-info">
-        <span style="color: #4285f4;">Bus A</span> and 
-        <span style="color: #ea4335;">Bus B</span> are running on the route
-    </div>
-    
     <div class="map-container" id="map">
-        <!-- Roads, bus stops and buses will be added here by JavaScript -->
+        <!-- Roads and bus stops will be added here -->
     </div>
     
     <div class="controls">
         <button id="startBtn">Start Buses</button>
         <button id="resetBtn" disabled>Reset</button>
     </div>
-    
+
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const map = document.getElementById('map');
             const startBtn = document.getElementById('startBtn');
             const resetBtn = document.getElementById('resetBtn');
             
-            // Create a random city map with roads and bus stops
-            createMap();
-            
-            // Route points for the buses
-            const route = [
-                {x: 50, y: 50},  // Start
+            // Define routes for both buses with a common stop
+            const routeA = [
+                {x: 50, y: 50},
                 {x: 150, y: 50},
                 {x: 150, y: 150},
-                {x: 250, y: 150},
-                {x: 250, y: 250},
+                {x: 250, y: 150}, // Common stop
+                {x: 350, y: 150},
                 {x: 350, y: 250},
-                {x: 350, y: 350},
-                {x: 450, y: 350},
-                {x: 450, y: 250},
-                {x: 550, y: 250},
-                {x: 550, y: 150},
-                {x: 650, y: 150},
-                {x: 650, y: 50},
-                {x: 750, y: 50}   // End
+                {x: 450, y: 250}
             ];
-            
-            // Place buses at the starting position
-            const busA = createBus('A', route[0].x, route[0].y, 'bus-a');
-            const busB = createBus('B', route[0].x, route[0].y + 20, 'bus-b');
-            
+
+            const routeB = [
+                {x: 50, y: 450},
+                {x: 150, y: 450},
+                {x: 150, y: 350},
+                {x: 250, y: 350},
+                {x: 250, y: 150}, // Common stop
+                {x: 350, y: 150},
+                {x: 450, y: 150}
+            ];
+
             let animationInterval;
-            let currentStopA = 0;
-            let currentStopB = -2; // Bus B starts 2 stops behind
-            
+            let currentPositionA = 0;
+            let currentPositionB = 0;
+
+            // Initialize map and buses
+            createMap();
+            const busA = createBus('A', routeA[0].x, routeA[0].y, 'bus-a');
+            const busB = createBus('B', routeB[0].x, routeB[0].y, 'bus-b');
+
             startBtn.addEventListener('click', startBuses);
             resetBtn.addEventListener('click', resetBuses);
-            
+
             function createMap() {
-                // Main horizontal roads
-                createRoad(0, 50, 800, 20);  // Top road
-                createRoad(0, 150, 800, 20);  // Middle road
-                createRoad(0, 250, 600, 20);  // Lower road
-                createRoad(0, 350, 500, 20);  // Bottom road
-                
-                // Main vertical roads
-                createRoad(50, 0, 20, 500);   // Left road
-                createRoad(150, 50, 20, 400); // First vertical
-                createRoad(250, 150, 20, 200); // Second vertical
-                createRoad(350, 250, 20, 100); // Third vertical
-                createRoad(450, 150, 20, 200); // Fourth vertical
-                createRoad(550, 50, 20, 300);  // Fifth vertical
-                createRoad(650, 0, 20, 200);   // Sixth vertical
-                createRoad(750, 0, 20, 100);   // Right road
-                
-                // Bus stops along the route
-                route.forEach(point => {
+                // Create main roads
+                createRoad(0, 50, 800, 20);   // Top horizontal
+                createRoad(0, 150, 800, 20);  // Middle horizontal
+                createRoad(0, 250, 800, 20);  // Bottom horizontal
+                createRoad(0, 350, 800, 20);  // Lower horizontal
+                createRoad(50, 0, 20, 500);   // Left vertical
+                createRoad(150, 0, 20, 500);  // Middle vertical
+                createRoad(250, 0, 20, 500);  // Center vertical
+                createRoad(350, 0, 20, 500);  // Right vertical
+                createRoad(450, 0, 20, 500);  // Far right vertical
+
+                // Create bus stops
+                routeA.concat(routeB).forEach(point => {
                     createBusStop(point.x, point.y);
                 });
             }
-            
+
             function createRoad(x, y, width, height) {
                 const road = document.createElement('div');
-                road.className = 'road';
-                road.style.left = x + 'px';
-                road.style.top = y + 'px';
-                
-                if (width > height) {
-                    road.classList.add('horizontal');
-                    road.style.width = width + 'px';
-                } else {
-                    road.classList.add('vertical');
-                    road.style.height = height + 'px';
-                }
-                
+                road.className = `road ${width > height ? 'horizontal' : 'vertical'}`;
+                road.style.left = `${x}px`;
+                road.style.top = `${y}px`;
+                road.style.width = `${width}px`;
+                road.style.height = `${height}px`;
                 map.appendChild(road);
             }
-            
+
             function createBusStop(x, y) {
                 const stop = document.createElement('div');
                 stop.className = 'bus-stop';
-                stop.style.left = x + 'px';
-                stop.style.top = y + 'px';
+                stop.style.left = `${x}px`;
+                stop.style.top = `${y}px`;
                 map.appendChild(stop);
             }
-            
+
             function createBus(label, x, y, className) {
                 const bus = document.createElement('div');
                 bus.className = `bus ${className}`;
-                bus.style.left = x + 'px';
-                bus.style.top = y + 'px';
                 bus.textContent = label;
+                bus.style.left = `${x}px`;
+                bus.style.top = `${y}px`;
                 map.appendChild(bus);
                 return bus;
             }
-            
+
             function startBuses() {
                 startBtn.disabled = true;
                 resetBtn.disabled = true;
-                currentStopA = 0;
-                currentStopB = -2;
-                
-                // Move buses with a small delay between them
-                animationInterval = setInterval(moveBuses, 1000);
+                currentPositionA = 0;
+                currentPositionB = 0;
+
+                animationInterval = setInterval(() => {
+                    // Move Bus A
+                    if (currentPositionA < routeA.length - 1) {
+                        currentPositionA++;
+                        busA.style.left = routeA[currentPositionA].x + 'px';
+                        busA.style.top = routeA[currentPositionA].y + 'px';
+                    }
+
+                    // Move Bus B
+                    if (currentPositionB < routeB.length - 1) {
+                        currentPositionB++;
+                        busB.style.left = routeB[currentPositionB].x + 'px';
+                        busB.style.top = routeB[currentPositionB].y + 'px';
+                    }
+
+                    // Stop when both buses reach their destinations
+                    if (currentPositionA >= routeA.length - 1 && 
+                        currentPositionB >= routeB.length - 1) {
+                        clearInterval(animationInterval);
+                        resetBtn.disabled = false;
+                    }
+                }, 1000);
             }
-            
-            function moveBuses() {
-                // Move Bus A
-                if (currentStopA < route.length) {
-                    const nextStop = route[currentStopA];
-                    busA.style.left = nextStop.x + 'px';
-                    busA.style.top = nextStop.y + 'px';
-                    currentStopA++;
-                }
-                
-                // Move Bus B (with 2-stop delay)
-                if (currentStopB >= 0 && currentStopB < route.length) {
-                    const nextStop = route[currentStopB];
-                    busB.style.left = nextStop.x + 'px';
-                    busB.style.top = nextStop.y + 'px';
-                }
-                currentStopB++;
-                
-                // Check if both buses have reached the end
-                if (currentStopA >= route.length && currentStopB >= route.length) {
-                    clearInterval(animationInterval);
-                    resetBtn.disabled = false;
-                }
-            }
-            
+
             function resetBuses() {
-                // Reset buses to starting position
-                busA.style.left = route[0].x + 'px';
-                busA.style.top = route[0].y + 'px';
-                busB.style.left = route[0].x + 'px';
-                busB.style.top = route[0].y + 20 + 'px';
-                
+                clearInterval(animationInterval);
+                busA.style.left = routeA[0].x + 'px';
+                busA.style.top = routeA[0].y + 'px';
+                busB.style.left = routeB[0].x + 'px';
+                busB.style.top = routeB[0].y + 'px';
                 startBtn.disabled = false;
                 resetBtn.disabled = true;
+                currentPositionA = 0;
+                currentPositionB = 0;
             }
         });
     </script>
