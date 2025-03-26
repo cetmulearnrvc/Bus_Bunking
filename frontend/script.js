@@ -1,33 +1,38 @@
-const map = L.map('map').setView([12.97, 77.59], 12);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+let map;
+let markers = {}; // Store markers by bus ID
 
+function initMap() {
+    map = new google.maps.Map(document.getElementById("map"), {
+        center: { lat: 12.9716, lng: 77.5946 },
+        zoom: 12,
+    });
+
+    fetchBusData();
+    setInterval(fetchBusData, 3000); // Auto-update every 3 seconds
+}
+
+// Fetch bus locations from backend
 function fetchBusData() {
     fetch("http://localhost:3000/buses")
-        .then(res => res.json())
-        .then(data => {
-            map.eachLayer(layer => {
-                if (layer instanceof L.Marker) map.removeLayer(layer);
-            });
-
-            data.forEach(bus => {
-                let [lat, lon] = bus.location.split(",").map(Number);
-                L.marker([lat, lon]).addTo(map).bindPopup(`Bus ${bus.id} - Load: ${bus.load}`);
-            });
-        });
+        .then(response => response.json())
+        .then(data => updateBusesOnMap(data))
+        .catch(error => console.error("Error fetching bus data:", error));
 }
 
-function fetchDecisions() {
-    fetch("http://localhost:3000/stop-skip-decision")
-        .then(res => res.json())
-        .then(decisions => {
-            document.getElementById("decisions").innerHTML = decisions.map(d => 
-                `<p>Bus ${d.bus_id}: ${d.skip_stop ? "Skipping Next Stop 🚀" : "Stopping 🛑"}</p>`
-            ).join("");
-        });
-}
+// Update bus markers on the map
+function updateBusesOnMap(buses) {
+    buses.forEach(bus => {
+        const [lat, lng] = bus.location.split(",").map(Number);
 
-// Refresh data every 5 seconds
-setInterval(() => {
-    fetchBusData();
-    fetchDecisions();
-}, 5000);
+        if (markers[bus.id]) {
+            markers[bus.id].setPosition({ lat, lng });
+        } else {
+            markers[bus.id] = new google.maps.Marker({
+                position: { lat, lng },
+                map: map,
+                title: `Bus ${bus.id} - Load: ${bus.load}`,
+                icon: "bus-icon.png",
+            });
+        }
+    });
+}
